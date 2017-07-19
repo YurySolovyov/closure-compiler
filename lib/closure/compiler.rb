@@ -1,5 +1,5 @@
 require 'stringio'
-require 'tempfile'
+require 'open3'
 
 module Closure
 
@@ -17,6 +17,8 @@ module Closure
       :language_in => 'ECMASCRIPT5'
     }
 
+    JVM_FLAGS = '-XX:TieredStopAtLevel=1'
+
     # When you create a Compiler, pass in the flags and options.
     def initialize(options={})
       @java     = options.delete(:java)     || JAVA_COMMAND
@@ -28,24 +30,18 @@ module Closure
     # JavaScript as a string or yields an IO object containing the response to a
     # block, for streaming.
     def compile(io)
-      tempfile = Tempfile.new('closure_compiler')
+      stdin, stdout, _stderr, _wait_thr = Open3::popen3(command)
       if io.respond_to? :read
         while buffer = io.read(4096) do
-          tempfile.write(buffer)
+          stdin.write(buffer)
         end
       else
-        tempfile.write(io.to_s)
+        stdin.write(io.to_s)
       end
-      tempfile.flush
+      stdin.flush
+      stdin.close
 
-      begin
-        result = compile_files(tempfile.path)
-      rescue Exception => e
-        raise e
-      ensure
-        tempfile.close!
-      end
-
+      result = stdout.read
       yield(StringIO.new(result)) if block_given?
       result
     end
@@ -87,7 +83,7 @@ module Closure
     end
 
     def command
-      [@java, '-jar', "\"#{@jar}\"", serialize_options(@options)].flatten.join(' ')
+      [@java, '-jar', JVM_FLAGS, "\"#{@jar}\"", serialize_options(@options)].flatten.join(' ')
     end
 
   end
