@@ -6,6 +6,25 @@ module Closure
   # We raise a Closure::Error when compilation fails for any reason.
   class Error < StandardError; end
 
+  # Wrap open3 process with a bit nicer interface
+  class ProcessWrapper
+    def initialize(command)
+      stdin, stdout, _stderr, _wait_thr = Open3::popen3(command)
+      @stdin = stdin
+      @stdout = stdout
+    end
+
+    def write(chunk)
+      @stdin.write(chunk)
+    end
+
+    def result
+      @stdin.flush
+      @stdin.close
+      @stdout.read
+    end
+  end
+
   # The Closure::Compiler is a basic wrapper around the actual JAR. There's not
   # much to see here.
   class Compiler
@@ -30,18 +49,16 @@ module Closure
     # JavaScript as a string or yields an IO object containing the response to a
     # block, for streaming.
     def compile(io)
-      stdin, stdout, _stderr, _wait_thr = Open3::popen3(command)
+      process = ProcessWrapper.new(command)
       if io.respond_to? :read
         while buffer = io.read(4096) do
-          stdin.write(buffer)
+          process.write(buffer)
         end
       else
-        stdin.write(io.to_s)
+        process.write(io.to_s)
       end
-      stdin.flush
-      stdin.close
 
-      result = stdout.read
+      result = process.result
       yield(StringIO.new(result)) if block_given?
       result
     end
@@ -53,16 +70,7 @@ module Closure
     def compile_files(files)
       @options.merge!(:js => files)
 
-      begin
-        redirect_stderr = "2>&1" if !Gem.win_platform?
-        result = `#{command} #{redirect_stderr}`
-      rescue Exception
-        raise Error, "compression failed: #{result}"
-      end
-
-      unless $?.exitstatus.zero?
-        raise Error, result
-      end
+      result = ProcessWrapper.new(command).result
 
       yield(StringIO.new(result)) if block_given?
       result
