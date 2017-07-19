@@ -9,19 +9,34 @@ module Closure
   # Wrap open3 process with a bit nicer interface
   class ProcessWrapper
     def initialize(command)
-      stdin, stdout, _stderr, _wait_thr = Open3::popen3(command)
-      @stdin = stdin
-      @stdout = stdout
+      stdin, stdout, stderr, status_thread = Open3::popen3(command)
+      @in = stdin
+      @out = stdout
+      @error = stderr
+      @status_thread = status_thread
+      @error.readline
     end
 
     def write(chunk)
-      @stdin.write(chunk)
+      @in.write(chunk)
     end
 
     def result
-      @stdin.flush
-      @stdin.close
-      @stdout.read
+      @in.flush
+      @in.close
+      readable, writable, errored = IO.select([@out, @error], [], [], 20)
+
+      p '-'*10
+      p "readable -> #{readable}"
+      p "writable -> #{writable}"
+      p "errored -> #{errored}"
+      p '-'*10
+
+      if readable && readable.any? { |s| s == @error }
+        raise Error
+      end
+
+      readable.first.read
     end
   end
 
