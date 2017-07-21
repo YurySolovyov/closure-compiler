@@ -14,29 +14,34 @@ module Closure
       @out = stdout
       @error = stderr
       @status_thread = status_thread
-      @error.readline
     end
 
     def write(chunk)
+      read_prompt unless prompt_read?
       @in.write(chunk)
     end
 
     def result
       @in.flush
       @in.close
-      readable, writable, errored = IO.select([@out, @error], [], [], 20)
-
-      p '-'*10
-      p "readable -> #{readable}"
-      p "writable -> #{writable}"
-      p "errored -> #{errored}"
-      p '-'*10
+      readable, _writable, _errored = IO.select([@out, @error])
 
       if readable && readable.any? { |s| s == @error }
-        raise Error
+        raise Error, @error.read
+      else
+        @out.read
       end
+    end
 
-      readable.first.read
+    private
+
+    def read_prompt
+      @prompt_read = true
+      @error.readline
+    end
+
+    def prompt_read?
+      @prompt_read == true
     end
   end
 
