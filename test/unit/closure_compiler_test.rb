@@ -21,21 +21,25 @@ class ClosureCompilerTest < Minitest::Test
   EOS
 
   def test_whitespace_compression
+    puts 'test_whitespace_compression'
     js = Compiler.new(:compilation_level => "WHITESPACE_ONLY").compile(ORIGINAL).strip
     assert_equal js, COMPILED_WHITESPACE
   end
 
   def test_simple_compression
+    puts 'test_simple_compression'
     js = Compiler.new.compile(ORIGINAL).strip
     assert_equal js, COMPILED_SIMPLE
   end
 
   def test_advanced_compression
+    puts 'test_advanced_compression'
     js = Compiler.new(:compilation_level => "ADVANCED_OPTIMIZATIONS").compile(ORIGINAL).strip
     assert_equal js, COMPILED_ADVANCED
   end
 
   def test_block_syntax
+    puts 'test_block_syntax'
     result = ''
     Compiler.new(:compilation_level => "ADVANCED_OPTIMIZATIONS").compile(ORIGINAL) do |code|
       while buffer = code.read(3)
@@ -46,6 +50,7 @@ class ClosureCompilerTest < Minitest::Test
   end
 
   def test_jar_and_java_specifiation
+    puts 'test_jar_and_java_specifiation'
     jar = Dir['vendor/closure-compiler-*.jar'].first
     unless java = ( `which java` rescue nil )
       java = `where java` rescue nil # works on newer windows
@@ -59,6 +64,7 @@ class ClosureCompilerTest < Minitest::Test
   end
 
   def test_exceptions
+    puts 'test_exceptions'
     assert_raises(Closure::Error) do
       Compiler.new.compile('1++')
     end
@@ -68,15 +74,18 @@ class ClosureCompilerTest < Minitest::Test
   end
 
   def test_stderr_reading
+    puts 'test_stderr_reading'
     js = Compiler.new.compile(File.read('test/fixtures/precompressed.js'))
     assert js == File.read('test/fixtures/precompressed-compiled.js')
   end
 
   def test_permissions
+    puts 'test_permissions'
     assert File.executable?(COMPILER_JAR)
   end
 
   def test_serialize_options
+    puts 'test_serialize_options'
     options = { 'externs' => 'library1.js', "compilation_level" => "ADVANCED_OPTIMIZATIONS" }
     # ["--externs",  "library1.js", "--compilation_level", "ADVANCED_OPTIMIZATIONS"]
     # although Hash in 1.8 might change the order to :
@@ -86,11 +95,13 @@ class ClosureCompilerTest < Minitest::Test
   end
 
   def test_serialize_options_for_arrays
+    puts 'test_serialize_options_for_arrays'
     compiler = Closure::Compiler.new('externs' => ['library1.js', "library2.js"])
     assert_equal ["--externs", "library1.js", "--externs", "library2.js"], compiler.send(:serialize_options, 'externs' => ['library1.js', "library2.js"])
   end
 
   def test_compiling_array_of_file_paths
+    puts 'test_compiling_array_of_file_paths'
     files = ['test/fixtures/file1.js', 'test/fixtures/file2.js']
     result = Closure::Compiler.new().compile_files(files)
 
