@@ -9,11 +9,11 @@ module Closure
   # Wrap open3 process with a bit nicer interface
   class ProcessWrapper
     def initialize(command)
-      stdin, stdout, stderr, status_thread = Open3::popen3(command)
+      @prompt_read = false
+      stdin, stdout, stderr, _ = Open3::popen3(command)
       @in = stdin
       @out = stdout
       @error = stderr
-      @status_thread = status_thread
     end
 
     def write(chunk)
