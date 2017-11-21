@@ -7,3 +7,9 @@ rvm:
   - 2.3
   - 2.4
   - jruby
+
+jdk:
+  - openjdk7
+  - openjdk8
+  - oraclejdk7
+  - oraclejdk8
