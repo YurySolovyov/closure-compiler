@@ -1,3 +1,4 @@
+$:.push File.expand_path("../lib", __FILE__)
 require File.join(File.dirname(__FILE__), 'lib', 'closure-compiler')
 
 Gem::Specification.new do |s|
