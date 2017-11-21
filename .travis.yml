@@ -13,3 +13,6 @@ jdk:
   - openjdk8
   - oraclejdk7
   - oraclejdk8
+
+before_install:
+  - unset _JAVA_OPTIONS
